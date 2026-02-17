@@ -55,8 +55,11 @@ if exist "requirements.txt" (
     )
 )
 
+:: Ensure tracking is set up for master branch
+git branch --set-upstream-to=origin/master master >nul 2>&1
+
 echo Checking for updates...
-git pull --ff-only 2>&1
+git pull --ff-only origin master 2>&1
 if %ERRORLEVEL% neq 0 (
     echo WARNING: Could not pull updates. Continuing with current version.
     echo.

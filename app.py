@@ -519,7 +519,7 @@ def main():
                         
                         st.markdown("### 📊 לוג שינויים")
                         df = pd.DataFrame(changes)
-                        st.dataframe(df, use_container_width=True, hide_index=True)
+                        st.dataframe(df, width="stretch", hide_index=True)
                         
                         output = BytesIO()
                         processed_doc.save(output)
@@ -679,7 +679,7 @@ def main():
                     
                     edited_history = st.data_editor(
                         history_df,
-                        use_container_width=True,
+                        width="stretch",
                         height=200,
                         hide_index=True,
                         column_config={
@@ -739,7 +739,7 @@ def main():
                     
                     edited_df = st.data_editor(
                         df_dict,
-                        use_container_width=True,
+                        width="stretch",
                         height=300,
                         hide_index=True,
                         column_config={
@@ -899,7 +899,7 @@ def main():
                     
                     edited_file_df = st.data_editor(
                         file_df,
-                        use_container_width=True,
+                        width="stretch",
                         height=min(300, 60 + len(file_entries) * 35),
                         hide_index=True,
                         column_config={
