@@ -192,8 +192,16 @@ call venv\Scripts\activate.bat
 :: ============================
 echo.
 echo Installing dependencies...
-pip install --upgrade pip --quiet
-pip install -r requirements.txt --quiet
+venv\Scripts\python.exe -m pip install --upgrade pip --quiet
+if errorlevel 1 (
+    echo WARNING: Could not upgrade pip. Continuing with the installed version.
+)
+venv\Scripts\python.exe -m pip install -r requirements.txt --quiet
+if errorlevel 1 (
+    echo ERROR: Failed to install dependencies.
+    pause
+    exit /b 1
+)
 echo Dependencies installed.
 
 :: --- Create data directory if missing ---
