@@ -24,6 +24,7 @@ book-editor/
 │   └── מספרים.txt
 ├── setup.sh               # Automated setup & run script (Linux/macOS/WSL)
 ├── setup.bat              # Automated setup & run script (Windows)
+├── update.py              # Safe automatic application updater (Windows)
 ├── Book-Editor.bat        # Windows shortcut - double-click to launch
 ├── .gitignore
 └── README.md
@@ -32,17 +33,17 @@ book-editor/
 ## Prerequisites
 
 - **Linux / macOS / WSL** -- No prerequisites. The setup script installs everything automatically.
-- **Windows** -- No prerequisites. The setup script installs Git and Python automatically via `winget` if they are not already installed. (`winget` is built into Windows 10 1709+ and Windows 11.)
+- **Windows** -- Python is installed automatically via `winget` if it is missing. Git is not required for ZIP-based installations. (`winget` is built into Windows 10 1709+ and Windows 11.)
 
 ## Quick Start - Windows
 
 1. **First time** -- Double-click `setup.bat`. It will automatically:
-   - Install Git (via winget) if not already present
+   - No Git required (updates download directly from GitHub)
    - Install Python 3.12 (via winget) if not already present
    - Create a Windows virtual environment
    - Install all dependencies
    - Open the app in your browser
-2. **Every day after** -- Double-click `Book-Editor.bat` to launch the app. It will automatically pull the latest version from GitHub before starting.
+2. **Every day after** -- Double-click `Book-Editor.bat` to launch the app. It automatically checks GitHub and updates application files before starting, even when installed from a ZIP. Existing publisher data in `data/` is retained.
 
 That's it. No command line needed.
 
@@ -136,3 +137,8 @@ Example:
 2. **Build a dictionary** – Add replacement rules manually or import from a `.txt` file.
 3. **Process a document** – Go to the "עיבוד מסמך" tab, upload a `.docx` file, select a publisher, and click "בצע עיבוד".
 4. **Download** – Review the change log and download the processed file with Track Changes applied.
+
+
+## Windows ZIP auto-update behavior
+
+Download the latest master ZIP once to install the new launcher. On each subsequent start, `Book-Editor.bat` downloads and compares the current application files with GitHub. Only `app.py`, `requirements.txt` and `update.py` are replaced. The `data/` directory, virtual environment, user-created files and launch scripts are never overwritten. If GitHub is temporarily unavailable, the existing version starts. Close any running Book Editor window before starting it again to activate an update.
