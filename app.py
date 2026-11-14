@@ -34,18 +34,31 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
     
-    * {
-        font-family: 'Heebo', sans-serif !important;
+    /* Scope Hebrew styling to user-facing content only. Streamlit's
+       internal uploader, controls and icon wrappers must retain their layout. */
+    .stApp {
+        font-family: 'Heebo', Arial, sans-serif;
     }
-    
+
     .main .block-container {
         direction: rtl;
         text-align: right;
     }
-    
-    h1, h2, h3, h4, h5, h6, p, div, span, label {
-        direction: rtl;
+
+    .main .block-container h1,
+    .main .block-container h2,
+    .main .block-container h3,
+    .main .block-container h4,
+    .main .block-container h5,
+    .main .block-container h6,
+    .main .block-container p,
+    .main .block-container label {
         text-align: right;
+    }
+
+    [data-testid="stFileUploader"] button {
+        direction: ltr;
+        white-space: nowrap;
     }
     
     /* ===== טאבים ===== */
