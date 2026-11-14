@@ -24,65 +24,9 @@ echo.
 :: --- Navigate to script directory ---
 cd /d "%~dp0"
 
-:: =====================
-::  STEP 1: Find Git
-:: =====================
-call :find_git
-if defined GIT goto :git_ready
-
-echo.
-echo Git was not found on this machine.
-echo.
-
-:: --- Check if winget is available ---
-where winget >nul 2>&1
-if %ERRORLEVEL% neq 0 goto :no_winget_git
-
-:: --- Install Git via winget ---
-echo Installing Git automatically via winget...
-echo This may take a minute or two.
-echo.
-winget install Git.Git --accept-source-agreements --accept-package-agreements
-if %ERRORLEVEL% neq 0 goto :git_install_failed
-
-echo.
-echo Git installed successfully. Refreshing environment...
-echo.
-
-:: --- Refresh PATH and search for newly installed Git ---
-call :refresh_path
-call :find_git_in_common_paths
-call :find_git
-if defined GIT goto :git_ready
-
-echo.
-echo WARNING: Git was installed but could not be found in the current session.
-echo The app will still work, but auto-updates will not be available
-echo until you restart your computer or reopen this script.
-echo.
-
-goto :git_ready
-
-:no_winget_git
-echo WARNING: winget is not available. Skipping Git installation.
-echo The app will work without Git, but auto-updates will not be available.
-echo You can install Git manually from: https://git-scm.com/download/win
-echo.
-goto :git_ready
-
-:git_install_failed
-echo.
-echo WARNING: Automatic Git installation failed. Skipping.
-echo The app will work without Git, but auto-updates will not be available.
-echo You can install Git manually from: https://git-scm.com/download/win
-echo.
-
+:: Git is optional. ZIP-based auto-updates work without Git.
 :git_ready
-if defined GIT (
-    echo Found Git (%GIT%)
-) else (
-    echo Git not available - skipping auto-update features.
-)
+echo Git is not required for automatic updates.
 
 :: =====================
 ::  STEP 2: Find Python
@@ -220,8 +164,17 @@ echo   Press Ctrl+C to stop the server
 echo =========================================
 echo.
 
+if exist "update.py" (
+    "venv\Scripts\python.exe" update.py
+)
+"venv\Scripts\python.exe" -m pip install -r requirements.txt --quiet
+if errorlevel 1 (
+    echo ERROR: Failed to install updated dependencies.
+    pause
+    exit /b 1
+)
 start "" http://localhost:8501
-streamlit run app.py --server.headless true
+"venv\Scripts\python.exe" -m streamlit run app.py --server.headless true
 
 pause
 exit /b 0
