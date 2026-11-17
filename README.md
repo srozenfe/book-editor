@@ -9,7 +9,7 @@ A Streamlit-based tool for automatic word replacement in Word documents (.docx),
 - **Dictionary Management** – Add rules manually, edit inline via a data table, or bulk-import from a text file.
 - **Deletion History** – Deleted dictionary entries are saved (up to 100) and can be restored.
 - **Publisher Rules** – A large read-only text area at the bottom of Dictionary Management stores free-form editorial instructions separately for each publisher. Click Edit, then Save or Cancel; these notes do not alter automatic word replacement.
-- **Sticky Notes (שונות)** – Four RTL-positioned notes per row, with an Add Note button, independent Edit/Save/Delete actions, and creation time at the top-left of each card. Stored in `data/sticky_notes.json`. Existing `data/misc_notes.txt` text is imported once as a first note and retained as a backup.
+- **Sticky Notes (שונות)** – Three RTL-positioned notes per row, with an Add Note button, independent Edit/Save/Delete actions, optional pin-to-top, creation time at the top-left and last edit time at the top-right of each card. Stored in `data/sticky_notes.json`. Existing `data/misc_notes.txt` text is imported once as a first note and retained as a backup.
 - **Export** – Download the processed Word file and export/import dictionary files.
 
 ## Project Structure
