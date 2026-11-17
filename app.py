@@ -17,6 +17,7 @@ from io import BytesIO
 # הגדרות בסיסיות
 DATA_DIR = Path(__file__).parent / "data"
 PUBLISHERS_FILE = DATA_DIR / "publishers.json"
+MISC_NOTES_FILE = DATA_DIR / "misc_notes.txt"
 
 # יצירת תיקיות אם לא קיימות
 DATA_DIR.mkdir(exist_ok=True)
@@ -186,7 +187,8 @@ st.markdown("""
 
     /* Publisher rules only: Hebrew typing and right alignment.
        Keep the Streamlit auto-content height and avoid inner scrollbars. */
-    [class*="st-key-publisher_rules_"] textarea {
+    [class*="st-key-publisher_rules_"] textarea,
+    [class*="st-key-misc_notes_"] textarea {
         direction: rtl !important;
         text-align: right !important;
         unicode-bidi: plaintext;
@@ -202,7 +204,8 @@ st.markdown("""
     .st-key-panel_delete_publisher > div[data-testid="stVerticalBlockBorderWrapper"],
     .st-key-panel_add_dictionary_entry > div[data-testid="stVerticalBlockBorderWrapper"],
     .st-key-panel_import_dictionary > div[data-testid="stVerticalBlockBorderWrapper"],
-    .st-key-panel_publisher_rules > div[data-testid="stVerticalBlockBorderWrapper"] {
+    .st-key-panel_publisher_rules > div[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-panel_misc_notes > div[data-testid="stVerticalBlockBorderWrapper"] {
         border: 2.5px solid var(--text-color, #334155) !important;
         border-radius: 12px !important;
         padding: 1.2rem !important;
@@ -223,7 +226,8 @@ st.markdown("""
     }
 
     /* Preserve contrast of saved instructions in read-only mode. */
-    [class*="st-key-publisher_rules_read_only_"] textarea:disabled {
+    [class*="st-key-publisher_rules_read_only_"] textarea:disabled,
+    .st-key-misc_notes_read_only textarea:disabled {
         opacity: 1 !important;
         color: var(--text-color, #111827) !important;
         -webkit-text-fill-color: var(--text-color, #111827) !important;
@@ -232,7 +236,9 @@ st.markdown("""
         cursor: default;
     }
     [class*="st-key-publisher_rules_read_only_"] textarea,
-    [class*="st-key-publisher_rules_editor_"] textarea {
+    [class*="st-key-publisher_rules_editor_"] textarea,
+    .st-key-misc_notes_read_only textarea,
+    .st-key-misc_notes_editor textarea {
         border: 2.5px solid var(--text-color, #334155) !important;
         background-color: var(--background-color, #ffffff) !important;
         color: var(--text-color, #111827) !important;
@@ -248,6 +254,18 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+def load_misc_notes() -> str:
+    """Load general notes independently of publisher dictionaries."""
+    if MISC_NOTES_FILE.exists():
+        return MISC_NOTES_FILE.read_text(encoding="utf-8")
+    return ""
+
+
+def save_misc_notes(notes: str) -> None:
+    """Persist general notes in the local, updater-protected data folder."""
+    MISC_NOTES_FILE.write_text(notes, encoding="utf-8")
 
 
 def load_publishers() -> dict:
@@ -544,7 +562,7 @@ def main():
     if "show_history" not in st.session_state:
         st.session_state.show_history = False
     
-    tab1, tab2 = st.tabs(["🔄 עיבוד מסמך", "⚙️ ניהול מילונים"])
+    tab1, tab2, tab3 = st.tabs(["🔄 עיבוד מסמך", "⚙️ ניהול מילונים", "📝 שונות"])
     
     # ===== טאב עיבוד מסמך =====
     with tab1:
@@ -1120,6 +1138,49 @@ def main():
                         st.rerun()
             else:
                 st.info("בחר הוצאת ספרים למעלה כדי להציג או לערוך את חוקיה.")
+
+
+    # ===== טאב שונות - הערות כלליות =====
+    with tab3:
+        st.markdown("### 📝 שונות")
+        with st.container(border=True, key="panel_misc_notes"):
+            st.markdown("#### הערות שונות")
+            st.caption("הערות כלליות שאינן קשורות להוצאת ספרים מסוימת")
+            notes = load_misc_notes()
+
+            if st.session_state.get("editing_misc_notes", False):
+                st.text_area(
+                    "עריכת הערות",
+                    height="content",
+                    key="misc_notes_editor",
+                    help="אפשר להקליד או להדביק כאן הערות מכל סוג.",
+                )
+                save_col, cancel_col = st.columns(2)
+                with save_col:
+                    if st.button("✅ שמור שינויים", type="primary",
+                                 use_container_width=True, key="save_misc_notes"):
+                        save_misc_notes(st.session_state["misc_notes_editor"])
+                        st.session_state.editing_misc_notes = False
+                        st.success("ההערות נשמרו בהצלחה")
+                        st.rerun()
+                with cancel_col:
+                    if st.button("❌ ביטול", use_container_width=True,
+                                 key="cancel_misc_notes"):
+                        st.session_state.editing_misc_notes = False
+                        st.rerun()
+            else:
+                st.text_area(
+                    "הערות (לקריאה בלבד)",
+                    value=notes,
+                    height="content",
+                    key="misc_notes_read_only",
+                    disabled=True,
+                    help="לחץ על עריכה כדי לשנות את ההערות.",
+                )
+                if st.button("✏️ עריכה", key="edit_misc_notes"):
+                    st.session_state["misc_notes_editor"] = notes
+                    st.session_state.editing_misc_notes = True
+                    st.rerun()
 
 
 if __name__ == "__main__":
