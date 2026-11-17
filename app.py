@@ -5,6 +5,9 @@
 import streamlit as st
 import json
 import re
+import html
+import os
+import uuid
 from pathlib import Path
 from datetime import datetime
 from copy import deepcopy
@@ -18,6 +21,7 @@ from io import BytesIO
 DATA_DIR = Path(__file__).parent / "data"
 PUBLISHERS_FILE = DATA_DIR / "publishers.json"
 MISC_NOTES_FILE = DATA_DIR / "misc_notes.txt"
+STICKY_NOTES_FILE = DATA_DIR / "sticky_notes.json"
 
 # יצירת תיקיות אם לא קיימות
 DATA_DIR.mkdir(exist_ok=True)
@@ -252,20 +256,79 @@ st.markdown("""
     .success-box *, .info-box *, .warning-box * {
         color: #172033 !important;
     }
+    /* Sticky Notes board: 4 columns ordered from right to left. */
+    .st-key-sticky_grid [data-testid="stHorizontalBlock"] {
+        direction: rtl;
+    }
+    [class*="st-key-sticky_card_"] > div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #fff5be !important;
+        border: 2.5px solid #bc9338 !important;
+        border-radius: 12px !important;
+        padding: 0.85rem !important;
+        box-shadow: 0 4px 11px rgba(87, 65, 17, 0.13);
+    }
+    [class*="st-key-sticky_card_"] .sticky-created {
+        text-align: left !important;
+        direction: ltr !important;
+        color: #5e4b21 !important;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-bottom: 0.6rem;
+    }
+    [class*="st-key-sticky_card_"] .sticky-content {
+        color: #29251a !important;
+        direction: rtl !important;
+        text-align: right !important;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        min-height: 100px;
+        line-height: 1.7;
+    }
+    [class*="st-key-sticky_card_"] textarea {
+        direction: rtl !important;
+        text-align: right !important;
+        color: #29251a !important;
+        background: #fffdf1 !important;
+        min-height: 110px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 
-def load_misc_notes() -> str:
-    """Load general notes independently of publisher dictionaries."""
+def load_sticky_notes() -> list:
+    """Load notes, migrating an old miscellaneous text note once if necessary."""
+    if STICKY_NOTES_FILE.exists():
+        with STICKY_NOTES_FILE.open("r", encoding="utf-8") as source:
+            notes = json.load(source)
+        if not isinstance(notes, list):
+            raise ValueError("Invalid sticky notes data format")
+        return notes
+
+    notes = []
     if MISC_NOTES_FILE.exists():
-        return MISC_NOTES_FILE.read_text(encoding="utf-8")
-    return ""
+        previous_text = MISC_NOTES_FILE.read_text(encoding="utf-8")
+        if previous_text.strip():
+            created_at = datetime.fromtimestamp(MISC_NOTES_FILE.stat().st_mtime)
+            notes.append({
+                "id": uuid.uuid4().hex,
+                "text": previous_text,
+                "created_at": created_at.isoformat(timespec="seconds"),
+            })
+    # Preserve the old text file as an untouched migration backup.
+    save_sticky_notes(notes)
+    return notes
 
 
-def save_misc_notes(notes: str) -> None:
-    """Persist general notes in the local, updater-protected data folder."""
-    MISC_NOTES_FILE.write_text(notes, encoding="utf-8")
+def save_sticky_notes(notes: list) -> None:
+    """Atomically persist notes inside the updater-protected data directory."""
+    temporary_file = STICKY_NOTES_FILE.with_suffix(".json.tmp")
+    try:
+        with temporary_file.open("w", encoding="utf-8") as output:
+            json.dump(notes, output, ensure_ascii=False, indent=2)
+        os.replace(temporary_file, STICKY_NOTES_FILE)
+    finally:
+        if temporary_file.exists():
+            temporary_file.unlink()
 
 
 def load_publishers() -> dict:
@@ -1140,47 +1203,114 @@ def main():
                 st.info("בחר הוצאת ספרים למעלה כדי להציג או לערוך את חוקיה.")
 
 
-    # ===== טאב שונות - הערות כלליות =====
+    # ===== טאב שונות - לוח פתקיות =====
     with tab3:
-        st.markdown("### 📝 שונות")
-        with st.container(border=True, key="panel_misc_notes"):
-            st.markdown("#### הערות שונות")
-            st.caption("הערות כלליות שאינן קשורות להוצאת ספרים מסוימת")
-            notes = load_misc_notes()
+        st.markdown("### 📝 שונות — לוח פתקיות")
+        st.caption("פתקיות אישיות. כל פתקית נשמרת בנפרד ותאריך היצירה שלה נשמר.")
+        notes = load_sticky_notes()
 
-            if st.session_state.get("editing_misc_notes", False):
-                st.text_area(
-                    "עריכת הערות",
-                    height="content",
-                    key="misc_notes_editor",
-                    help="אפשר להקליד או להדביק כאן הערות מכל סוג.",
-                )
-                save_col, cancel_col = st.columns(2)
-                with save_col:
-                    if st.button("✅ שמור שינויים", type="primary",
-                                 use_container_width=True, key="save_misc_notes"):
-                        save_misc_notes(st.session_state["misc_notes_editor"])
-                        st.session_state.editing_misc_notes = False
-                        st.success("ההערות נשמרו בהצלחה")
-                        st.rerun()
-                with cancel_col:
-                    if st.button("❌ ביטול", use_container_width=True,
-                                 key="cancel_misc_notes"):
-                        st.session_state.editing_misc_notes = False
-                        st.rerun()
-            else:
-                st.text_area(
-                    "הערות (לקריאה בלבד)",
-                    value=notes,
-                    height="content",
-                    key="misc_notes_read_only",
-                    disabled=True,
-                    help="לחץ על עריכה כדי לשנות את ההערות.",
-                )
-                if st.button("✏️ עריכה", key="edit_misc_notes"):
-                    st.session_state["misc_notes_editor"] = notes
-                    st.session_state.editing_misc_notes = True
-                    st.rerun()
+        if st.button("➕ הוסף פתקית", type="primary", key="add_sticky_note"):
+            note = {
+                "id": uuid.uuid4().hex,
+                "text": "",
+                "created_at": datetime.now().isoformat(timespec="seconds"),
+            }
+            notes.insert(0, note)
+            save_sticky_notes(notes)
+            st.session_state["editing_sticky_note"] = note["id"]
+            st.session_state[f"sticky_draft_{note['id']}"] = ""
+            st.session_state["confirm_delete_sticky"] = None
+            st.rerun()
+
+        if not notes:
+            st.info("עדיין אין פתקיות. לחצו על 'הוסף פתקית' כדי להתחיל.")
+        else:
+            with st.container(key="sticky_grid"):
+                # Exactly four cards per row, laid out right to left.
+                for start in range(0, len(notes), 4):
+                    columns = st.columns(4, gap="medium")
+                    for column, note in zip(columns, notes[start:start + 4]):
+                        note_id = note["id"]
+                        with column:
+                            with st.container(border=True, key=f"sticky_card_{note_id}"):
+                                try:
+                                    timestamp = datetime.fromisoformat(note["created_at"])
+                                    created_label = timestamp.strftime("%d/%m/%Y %H:%M")
+                                except (ValueError, TypeError, KeyError):
+                                    created_label = "תאריך לא זמין"
+                                # Timestamp is deliberately shown top-left, LTR.
+                                st.markdown(
+                                    '<div class="sticky-created">' +
+                                    html.escape(created_label) + '</div>',
+                                    unsafe_allow_html=True,
+                                )
+
+                                if st.session_state.get("editing_sticky_note") == note_id:
+                                    draft_key = f"sticky_draft_{note_id}"
+                                    st.text_area(
+                                        "תוכן הפתקית",
+                                        key=draft_key,
+                                        height="content",
+                                        placeholder="כתבו כאן את ההערה...",
+                                    )
+                                    if st.button(
+                                        "💾 שמור", type="primary",
+                                        key=f"save_sticky_{note_id}",
+                                        use_container_width=True,
+                                    ):
+                                        note["text"] = st.session_state[draft_key]
+                                        save_sticky_notes(notes)
+                                        st.session_state["editing_sticky_note"] = None
+                                        st.rerun()
+                                    if st.button(
+                                        "ביטול",
+                                        key=f"cancel_sticky_{note_id}",
+                                        use_container_width=True,
+                                    ):
+                                        st.session_state["editing_sticky_note"] = None
+                                        st.rerun()
+                                else:
+                                    st.markdown(
+                                        '<div class="sticky-content">' +
+                                        html.escape(note.get("text", "")) +
+                                        '</div>',
+                                        unsafe_allow_html=True,
+                                    )
+                                    if st.button(
+                                        "✏️ עריכה", key=f"edit_sticky_{note_id}",
+                                        use_container_width=True,
+                                    ):
+                                        st.session_state[f"sticky_draft_{note_id}"] = (
+                                            note.get("text", "")
+                                        )
+                                        st.session_state["editing_sticky_note"] = note_id
+                                        st.session_state["confirm_delete_sticky"] = None
+                                        st.rerun()
+
+                                    if st.session_state.get("confirm_delete_sticky") == note_id:
+                                        st.warning("למחוק את הפתקית?")
+                                        if st.button(
+                                            "🗑️ אישור מחיקה",
+                                            key=f"confirm_sticky_{note_id}",
+                                            use_container_width=True,
+                                        ):
+                                            notes = [n for n in notes if n["id"] != note_id]
+                                            save_sticky_notes(notes)
+                                            st.session_state["confirm_delete_sticky"] = None
+                                            st.rerun()
+                                        if st.button(
+                                            "ביטול מחיקה",
+                                            key=f"cancel_delete_sticky_{note_id}",
+                                            use_container_width=True,
+                                        ):
+                                            st.session_state["confirm_delete_sticky"] = None
+                                            st.rerun()
+                                    elif st.button(
+                                        "🗑️ מחיקה", key=f"delete_sticky_{note_id}",
+                                        use_container_width=True,
+                                    ):
+                                        st.session_state["confirm_delete_sticky"] = note_id
+                                        st.rerun()
 
 
 if __name__ == "__main__":
