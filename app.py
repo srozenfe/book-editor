@@ -256,7 +256,7 @@ st.markdown("""
     .success-box *, .info-box *, .warning-box * {
         color: #172033 !important;
     }
-    /* Sticky Notes board: 4 columns ordered from right to left. */
+    /* Sticky Notes board: 3 columns ordered from right to left. */
     .st-key-sticky_grid [data-testid="stHorizontalBlock"] {
         direction: rtl;
     }
@@ -267,13 +267,27 @@ st.markdown("""
         padding: 0.85rem !important;
         box-shadow: 0 4px 11px rgba(87, 65, 17, 0.13);
     }
-    [class*="st-key-sticky_card_"] .sticky-created {
-        text-align: left !important;
-        direction: ltr !important;
+    [class*="st-key-sticky_card_"] .sticky-dates {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
         color: #5e4b21 !important;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 600;
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.5rem;
+    }
+    [class*="st-key-sticky_card_"] .sticky-dates span {
+        direction: rtl;
+        text-align: right;
+    }
+    [class*="st-key-sticky_card_"] .sticky-dates .sticky-created {
+        direction: ltr;
+        text-align: left !important;
+    }
+    [class*="st-key-sticky_card_"] [data-testid="stCheckbox"] label {
+        color: #29251a !important;
     }
     [class*="st-key-sticky_card_"] .sticky-content {
         color: #29251a !important;
@@ -1206,14 +1220,17 @@ def main():
     # ===== טאב שונות - לוח פתקיות =====
     with tab3:
         st.markdown("### 📝 שונות — לוח פתקיות")
-        st.caption("פתקיות אישיות. כל פתקית נשמרת בנפרד ותאריך היצירה שלה נשמר.")
+        st.caption("עד שלוש פתקיות בשורה. נעיצת פתקית תציג אותה בראש הרשימה.")
         notes = load_sticky_notes()
 
         if st.button("➕ הוסף פתקית", type="primary", key="add_sticky_note"):
+            created_at = datetime.now().isoformat(timespec="seconds")
             note = {
                 "id": uuid.uuid4().hex,
                 "text": "",
-                "created_at": datetime.now().isoformat(timespec="seconds"),
+                "created_at": created_at,
+                "updated_at": created_at,
+                "pinned": False,
             }
             notes.insert(0, note)
             save_sticky_notes(notes)
@@ -1225,25 +1242,48 @@ def main():
         if not notes:
             st.info("עדיין אין פתקיות. לחצו על 'הוסף פתקית' כדי להתחיל.")
         else:
+            # Stable sorting keeps existing relative order inside pinned/unpinned groups.
+            display_notes = sorted(notes, key=lambda n: not n.get("pinned", False))
             with st.container(key="sticky_grid"):
-                # Exactly four cards per row, laid out right to left.
-                for start in range(0, len(notes), 4):
-                    columns = st.columns(4, gap="medium")
-                    for column, note in zip(columns, notes[start:start + 4]):
+                # Three cards per row, laid out right to left.
+                for start in range(0, len(display_notes), 3):
+                    columns = st.columns(3, gap="medium")
+                    for column, note in zip(columns, display_notes[start:start + 3]):
                         note_id = note["id"]
                         with column:
                             with st.container(border=True, key=f"sticky_card_{note_id}"):
                                 try:
-                                    timestamp = datetime.fromisoformat(note["created_at"])
-                                    created_label = timestamp.strftime("%d/%m/%Y %H:%M")
+                                    created_label = datetime.fromisoformat(
+                                        note["created_at"]
+                                    ).strftime("%d/%m/%Y %H:%M")
                                 except (ValueError, TypeError, KeyError):
                                     created_label = "תאריך לא זמין"
-                                # Timestamp is deliberately shown top-left, LTR.
+                                try:
+                                    updated_label = datetime.fromisoformat(
+                                        note.get("updated_at") or note["created_at"]
+                                    ).strftime("%d/%m/%Y %H:%M")
+                                except (ValueError, TypeError, KeyError):
+                                    updated_label = "תאריך לא זמין"
+
+                                # The right side shows last update; left shows creation.
                                 st.markdown(
-                                    '<div class="sticky-created">' +
-                                    html.escape(created_label) + '</div>',
+                                    '<div class="sticky-dates">'
+                                    '<span>עודכן: ' + html.escape(updated_label) + '</span>'
+                                    '<span class="sticky-created">' +
+                                    html.escape(created_label) + '</span>'
+                                    '</div>',
                                     unsafe_allow_html=True,
                                 )
+
+                                pinned = st.checkbox(
+                                    "📌 נעץ לראש הרשימה",
+                                    value=bool(note.get("pinned", False)),
+                                    key=f"pin_sticky_{note_id}",
+                                )
+                                if pinned != bool(note.get("pinned", False)):
+                                    note["pinned"] = pinned
+                                    save_sticky_notes(notes)
+                                    st.rerun()
 
                                 if st.session_state.get("editing_sticky_note") == note_id:
                                     draft_key = f"sticky_draft_{note_id}"
@@ -1258,8 +1298,13 @@ def main():
                                         key=f"save_sticky_{note_id}",
                                         use_container_width=True,
                                     ):
-                                        note["text"] = st.session_state[draft_key]
-                                        save_sticky_notes(notes)
+                                        new_text = st.session_state[draft_key]
+                                        if note.get("text", "") != new_text:
+                                            note["text"] = new_text
+                                            note["updated_at"] = datetime.now().isoformat(
+                                                timespec="seconds"
+                                            )
+                                            save_sticky_notes(notes)
                                         st.session_state["editing_sticky_note"] = None
                                         st.rerun()
                                     if st.button(
