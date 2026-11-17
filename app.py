@@ -223,7 +223,7 @@ st.markdown("""
     }
 
     /* Preserve contrast of saved instructions in read-only mode. */
-    .st-key-publisher_rules_read_only textarea:disabled {
+    [class*="st-key-publisher_rules_read_only_"] textarea:disabled {
         opacity: 1 !important;
         color: var(--text-color, #111827) !important;
         -webkit-text-fill-color: var(--text-color, #111827) !important;
@@ -231,7 +231,7 @@ st.markdown("""
         font-weight: 500;
         cursor: default;
     }
-    .st-key-publisher_rules_read_only textarea,
+    [class*="st-key-publisher_rules_read_only_"] textarea,
     [class*="st-key-publisher_rules_editor_"] textarea {
         border: 2.5px solid var(--text-color, #334155) !important;
         background-color: var(--background-color, #ffffff) !important;
@@ -1105,7 +1105,7 @@ def main():
                         "חוקי ההוצאה (לקריאה בלבד)",
                         value=rules_text,
                         height="content",
-                        key="publisher_rules_read_only",
+                        key=f"publisher_rules_read_only_{selected_for_edit}",
                         disabled=True,
                         help="לחץ על עריכה כדי לשנות את חוקי ההוצאה",
                     )
