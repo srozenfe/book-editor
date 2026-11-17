@@ -600,7 +600,8 @@ def main():
                     publishers[new_publisher_name] = {
                         "description": new_publisher_desc,
                         "dictionary": [],
-                        "deletion_history": []
+                        "deletion_history": [],
+                        "publisher_rules": ""
                     }
                     save_publishers(publishers)
                     st.success(f"הוצאה '{new_publisher_name}' נוספה!")
@@ -987,6 +988,68 @@ def main():
                             st.info("כל הערכים התקינים כבר קיימים במילון")
                     else:
                         st.warning("⚠️ יש לבחור הוצאה קודם, או ליצור הוצאה חדשה ולבחור אותה, כדי להוסיף ערכים למילון")
+
+
+        # ===== חוקי הוצאה - טקסט חופשי לכל הוצאה =====
+        st.markdown("---")
+        st.markdown("### 📜 חוקי ההוצאה")
+        if selected_for_edit:
+            st.caption(f"חוקים והנחיות להוצאת הספרים: {selected_for_edit}")
+            rules_text = publishers[selected_for_edit].get("publisher_rules", "")
+            editing_this_publisher = (
+                st.session_state.get("editing_rules_publisher") == selected_for_edit
+            )
+            editor_key = f"publisher_rules_editor_{selected_for_edit}"
+
+            if editing_this_publisher:
+                st.text_area(
+                    "עריכת חוקי ההוצאה",
+                    height=350,
+                    key=editor_key,
+                    help="ניתן להקליד או להדביק כאן טקסט חופשי של כללי ההוצאה",
+                )
+                save_col, cancel_col = st.columns([1, 1])
+                with save_col:
+                    if st.button(
+                        "✅ שמור שינויים",
+                        type="primary",
+                        use_container_width=True,
+                        key="save_publisher_rules",
+                    ):
+                        publishers[selected_for_edit]["publisher_rules"] = (
+                            st.session_state[editor_key]
+                        )
+                        save_publishers(publishers)
+                        st.session_state.editing_rules_publisher = None
+                        st.success("חוקי ההוצאה נשמרו בהצלחה")
+                        st.rerun()
+                with cancel_col:
+                    if st.button(
+                        "❌ ביטול",
+                        use_container_width=True,
+                        key="cancel_publisher_rules",
+                    ):
+                        st.session_state.editing_rules_publisher = None
+                        st.rerun()
+            else:
+                st.text_area(
+                    "חוקי ההוצאה (לקריאה בלבד)",
+                    value=rules_text,
+                    height=350,
+                    disabled=True,
+                    help="לחץ על עריכה כדי לשנות את חוקי ההוצאה",
+                )
+                if st.button(
+                    "✏️ עריכה",
+                    key="edit_publisher_rules",
+                    use_container_width=False,
+                ):
+                    # Always start with the saved version, not a previous draft.
+                    st.session_state[editor_key] = rules_text
+                    st.session_state.editing_rules_publisher = selected_for_edit
+                    st.rerun()
+        else:
+            st.info("בחר הוצאת ספרים למעלה כדי להציג או לערוך את חוקיה.")
 
 
 if __name__ == "__main__":
