@@ -195,6 +195,57 @@ st.markdown("""
         resize: none;
         line-height: 1.7;
     }
+
+    /* Action groups: clearly delineated, with consistent spacing. */
+    .st-key-panel_add_publisher > div[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-panel_rename_publisher > div[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-panel_delete_publisher > div[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-panel_add_dictionary_entry > div[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-panel_import_dictionary > div[data-testid="stVerticalBlockBorderWrapper"],
+    .st-key-panel_publisher_rules > div[data-testid="stVerticalBlockBorderWrapper"] {
+        border: 2.5px solid var(--text-color, #334155) !important;
+        border-radius: 12px !important;
+        padding: 1.2rem !important;
+        background: var(--secondary-background-color, #f8fafc);
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.09);
+    }
+
+    /* Thicker field borders, including the upload area. */
+    .stTextInput input,
+    .stTextArea textarea,
+    [data-baseweb="select"] > div,
+    [data-testid="stFileUploaderDropzone"] {
+        border: 2px solid var(--text-color, #475569) !important;
+        border-radius: 8px !important;
+    }
+    [data-testid="stFileUploaderDropzone"] {
+        border-style: dashed !important;
+    }
+
+    /* Preserve contrast of saved instructions in read-only mode. */
+    .st-key-publisher_rules_read_only textarea:disabled {
+        opacity: 1 !important;
+        color: var(--text-color, #111827) !important;
+        -webkit-text-fill-color: var(--text-color, #111827) !important;
+        background-color: var(--background-color, #ffffff) !important;
+        font-weight: 500;
+        cursor: default;
+    }
+    .st-key-publisher_rules_read_only textarea,
+    [class*="st-key-publisher_rules_editor_"] textarea {
+        border: 2.5px solid var(--text-color, #334155) !important;
+        background-color: var(--background-color, #ffffff) !important;
+        color: var(--text-color, #111827) !important;
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    .success-box, .info-box, .warning-box {
+        color: #172033 !important;
+        border-width: 2.5px !important;
+    }
+    .success-box *, .info-box *, .warning-box * {
+        color: #172033 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -590,85 +641,88 @@ def main():
                 st.info("אין הוצאות ספרים. הוסף הוצאה חדשה למטה.")
             
             st.markdown("---")
-            st.markdown("**➕ הוספת הוצאה חדשה**")
-            
-            new_publisher_name = st.text_input(
-                "שם ההוצאה", 
-                key="new_publisher", 
-                placeholder="לדוגמה: הוצאת כנרת"
-            )
-            new_publisher_desc = st.text_input(
-                "תיאור (אופציונלי)", 
-                key="new_publisher_desc", 
-                placeholder="תיאור קצר"
-            )
-            
-            if st.button("הוסף הוצאה", type="primary", use_container_width=True):
-                if not new_publisher_name.strip():
-                    st.error("יש להזין שם הוצאה")
-                elif new_publisher_name in publishers:
-                    st.error("הוצאה בשם זה כבר קיימת")
-                else:
-                    publishers[new_publisher_name] = {
-                        "description": new_publisher_desc,
-                        "dictionary": [],
-                        "deletion_history": [],
-                        "publisher_rules": ""
-                    }
-                    save_publishers(publishers)
-                    st.success(f"הוצאה '{new_publisher_name}' נוספה!")
-                    st.rerun()
-            
+            with st.container(border=True, key="panel_add_publisher"):
+                st.markdown("**➕ הוספת הוצאה חדשה**")
+                
+                new_publisher_name = st.text_input(
+                    "שם ההוצאה", 
+                    key="new_publisher", 
+                    placeholder="לדוגמה: הוצאת כנרת"
+                )
+                new_publisher_desc = st.text_input(
+                    "תיאור (אופציונלי)", 
+                    key="new_publisher_desc", 
+                    placeholder="תיאור קצר"
+                )
+                
+                if st.button("הוסף הוצאה", type="primary", use_container_width=True):
+                    if not new_publisher_name.strip():
+                        st.error("יש להזין שם הוצאה")
+                    elif new_publisher_name in publishers:
+                        st.error("הוצאה בשם זה כבר קיימת")
+                    else:
+                        publishers[new_publisher_name] = {
+                            "description": new_publisher_desc,
+                            "dictionary": [],
+                            "deletion_history": [],
+                            "publisher_rules": ""
+                        }
+                        save_publishers(publishers)
+                        st.success(f"הוצאה '{new_publisher_name}' נוספה!")
+                        st.rerun()
+                
             # עריכת שם הוצאה
             if selected_for_edit:
                 st.markdown("---")
-                st.markdown("**✏️ עריכת שם הוצאה**")
-                rename_value = st.text_input(
-                    "שם חדש להוצאה",
-                    value=selected_for_edit,
-                    key="rename_publisher",
-                    label_visibility="collapsed"
-                )
-                if st.button("שנה שם", use_container_width=True):
-                    new_name = rename_value.strip()
-                    if not new_name:
-                        st.error("יש להזין שם")
-                    elif new_name == selected_for_edit:
-                        st.info("השם לא השתנה")
-                    elif new_name in publishers:
-                        st.error("הוצאה בשם זה כבר קיימת")
-                    else:
-                        publishers[new_name] = publishers.pop(selected_for_edit)
-                        save_publishers(publishers)
-                        st.success(f"השם שונה ל-'{new_name}'")
-                        st.rerun()
-            
+                with st.container(border=True, key="panel_rename_publisher"):
+                    st.markdown("**✏️ עריכת שם הוצאה**")
+                    rename_value = st.text_input(
+                        "שם חדש להוצאה",
+                        value=selected_for_edit,
+                        key="rename_publisher",
+                        label_visibility="collapsed"
+                    )
+                    if st.button("שנה שם", use_container_width=True):
+                        new_name = rename_value.strip()
+                        if not new_name:
+                            st.error("יש להזין שם")
+                        elif new_name == selected_for_edit:
+                            st.info("השם לא השתנה")
+                        elif new_name in publishers:
+                            st.error("הוצאה בשם זה כבר קיימת")
+                        else:
+                            publishers[new_name] = publishers.pop(selected_for_edit)
+                            save_publishers(publishers)
+                            st.success(f"השם שונה ל-'{new_name}'")
+                            st.rerun()
+                
             # מחיקת הוצאה
             if selected_for_edit:
                 st.markdown("---")
-                st.markdown("**🗑️ מחיקת הוצאה**")
-                
-                if not st.session_state.confirm_delete:
-                    if st.button("מחק הוצאה", type="secondary", use_container_width=True):
-                        st.session_state.confirm_delete = True
-                        st.rerun()
-                else:
-                    st.error(f"⚠️ האם אתה בטוח שברצונך למחוק את '{selected_for_edit}'?")
-                    st.warning("פעולה זו תמחק את ההוצאה וכל המילון שלה לצמיתות!")
+                with st.container(border=True, key="panel_delete_publisher"):
+                    st.markdown("**🗑️ מחיקת הוצאה**")
                     
-                    col_yes, col_no = st.columns(2)
-                    with col_yes:
-                        if st.button("✅ כן, מחק", type="primary", use_container_width=True):
-                            del publishers[selected_for_edit]
-                            save_publishers(publishers)
-                            st.session_state.confirm_delete = False
-                            st.success("ההוצאה נמחקה!")
+                    if not st.session_state.confirm_delete:
+                        if st.button("מחק הוצאה", type="secondary", use_container_width=True):
+                            st.session_state.confirm_delete = True
                             st.rerun()
-                    with col_no:
-                        if st.button("❌ ביטול", type="secondary", use_container_width=True):
-                            st.session_state.confirm_delete = False
-                            st.rerun()
-        
+                    else:
+                        st.error(f"⚠️ האם אתה בטוח שברצונך למחוק את '{selected_for_edit}'?")
+                        st.warning("פעולה זו תמחק את ההוצאה וכל המילון שלה לצמיתות!")
+                        
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("✅ כן, מחק", type="primary", use_container_width=True):
+                                del publishers[selected_for_edit]
+                                save_publishers(publishers)
+                                st.session_state.confirm_delete = False
+                                st.success("ההוצאה נמחקה!")
+                                st.rerun()
+                        with col_no:
+                            if st.button("❌ ביטול", type="secondary", use_container_width=True):
+                                st.session_state.confirm_delete = False
+                                st.rerun()
+            
         # ===== עמודה ימנית: ניהול מילון =====
         with col_dictionary:
             if selected_for_edit:
@@ -857,27 +911,28 @@ def main():
                 st.markdown("---")
                 
                 # הוספה ידנית
-                st.markdown("**➕ הוספה ידנית**")
-                add_col1, add_col2 = st.columns(2)
-                with add_col1:
-                    new_from = st.text_input("מקור (מה למצוא)", key="new_from", placeholder="הטקסט המקורי")
-                with add_col2:
-                    new_to = st.text_input("יעד (מה להחליף)", key="new_to", placeholder="הטקסט החדש")
-                
-                if st.button("הוסף למילון", key="add_to_dict", use_container_width=True):
-                    if not (new_from.strip() and new_to.strip()):
-                        st.error("יש למלא את שני השדות: מקור ויעד")
-                    else:
-                        existing_row = find_duplicate_entry(dictionary, new_from.strip())
-                        
-                        if existing_row > 0:
-                            st.error(f"⚠️ הערך '{new_from}' כבר קיים במילון בשורה {existing_row}")
+                with st.container(border=True, key="panel_add_dictionary_entry"):
+                    st.markdown("**➕ הוספה ידנית**")
+                    add_col1, add_col2 = st.columns(2)
+                    with add_col1:
+                        new_from = st.text_input("מקור (מה למצוא)", key="new_from", placeholder="הטקסט המקורי")
+                    with add_col2:
+                        new_to = st.text_input("יעד (מה להחליף)", key="new_to", placeholder="הטקסט החדש")
+                    
+                    if st.button("הוסף למילון", key="add_to_dict", use_container_width=True):
+                        if not (new_from.strip() and new_to.strip()):
+                            st.error("יש למלא את שני השדות: מקור ויעד")
                         else:
-                            dictionary.append({"from": new_from.strip(), "to": new_to.strip()})
-                            publishers[selected_for_edit]["dictionary"] = dictionary
-                            save_publishers(publishers)
-                            st.success("הערך נוסף!")
-                            st.rerun()
+                            existing_row = find_duplicate_entry(dictionary, new_from.strip())
+                            
+                            if existing_row > 0:
+                                st.error(f"⚠️ הערך '{new_from}' כבר קיים במילון בשורה {existing_row}")
+                            else:
+                                dictionary.append({"from": new_from.strip(), "to": new_to.strip()})
+                                publishers[selected_for_edit]["dictionary"] = dictionary
+                                save_publishers(publishers)
+                                st.success("הערך נוסף!")
+                                st.rerun()
             else:
                 st.markdown('<div class="section-header">📖 מילון</div>', unsafe_allow_html=True)
                 if publishers:
@@ -887,182 +942,184 @@ def main():
             
             # === טעינה מקובץ - תמיד זמין ===
             st.markdown("---")
-            st.markdown("**📁 טעינה מקובץ**")
-            st.caption('כל שורה בפורמט: "מקור" "יעד"')
-            
-            uploaded_dict = st.file_uploader(
-                "העלה קובץ מילון",
-                type=["txt"],
-                key="dict_file",
-                label_visibility="collapsed"
-            )
-            
-            if uploaded_dict:
-                content = uploaded_dict.getvalue().decode("utf-8")
-                file_entries = parse_dictionary_file_detailed(content)
+            with st.container(border=True, key="panel_import_dictionary"):
+                st.markdown("**📁 טעינה מקובץ**")
+                st.caption('כל שורה בפורמט: "מקור" "יעד"')
                 
-                if not file_entries:
-                    st.error("לא נמצאו שורות בקובץ")
-                else:
-                    valid_entries_list = [e for e in file_entries if e["valid"]]
-                    invalid_entries_list = [e for e in file_entries if not e["valid"]]
+                uploaded_dict = st.file_uploader(
+                    "העלה קובץ מילון",
+                    type=["txt"],
+                    key="dict_file",
+                    label_visibility="collapsed"
+                )
+                
+                if uploaded_dict:
+                    content = uploaded_dict.getvalue().decode("utf-8")
+                    file_entries = parse_dictionary_file_detailed(content)
                     
-                    if invalid_entries_list:
-                        invalid_lines_str = ", ".join(str(e["line"]) for e in invalid_entries_list)
-                        st.warning(f"⚠️ {len(invalid_entries_list)} שורות לא תקינות (שורות: {invalid_lines_str}). ניתן לערוך ולתקן בטבלה.")
-                    
-                    st.success(f"✅ {len(valid_entries_list)} ערכים תקינים מתוך {len(file_entries)} שורות")
-                    
-                    # טבלת תצוגה מקדימה עם אפשרות עריכה
-                    file_df = pd.DataFrame([
-                        {
-                            "#": e["line"],
-                            "מקור": e["from"],
-                            "יעד": e["to"],
-                        }
-                        for e in file_entries
-                    ])
-                    
-                    edited_file_df = st.data_editor(
-                        file_df,
-                        width="stretch",
-                        height=min(300, 60 + len(file_entries) * 35),
-                        hide_index=True,
-                        column_config={
-                            "#": st.column_config.NumberColumn("#", width="small", disabled=True),
-                            "מקור": st.column_config.TextColumn("מקור", width="medium"),
-                            "יעד": st.column_config.TextColumn("יעד", width="medium"),
-                        },
-                        key="file_preview_editor"
-                    )
-                    
-                    # הורדת קובץ מתוקן
-                    corrected_lines = []
-                    for _, row in edited_file_df.iterrows():
-                        from_val = str(row["מקור"]).strip() if pd.notna(row["מקור"]) else ""
-                        to_val = str(row["יעד"]).strip() if pd.notna(row["יעד"]) else ""
-                        if from_val and to_val:
-                            corrected_lines.append(f'"{from_val}" "{to_val}"')
-                    
-                    if corrected_lines:
-                        corrected_content = "\n".join(corrected_lines)
-                        st.download_button(
-                            "💾 הורד קובץ מתוקן",
-                            data=corrected_content.encode("utf-8"),
-                            file_name=f"corrected_{uploaded_dict.name}",
-                            mime="text/plain",
-                            use_container_width=True
-                        )
-                    
-                    # הוספת ערכים להוצאה
-                    st.markdown("---")
-                    
-                    # חישוב ערכים תקינים מהטבלה הערוכה
-                    entries_to_process = []
-                    for _, row in edited_file_df.iterrows():
-                        from_val = str(row["מקור"]).strip() if pd.notna(row["מקור"]) else ""
-                        to_val = str(row["יעד"]).strip() if pd.notna(row["יעד"]) else ""
-                        if from_val and to_val:
-                            entries_to_process.append({"from": from_val, "to": to_val})
-                    
-                    invalid_in_table = len(edited_file_df) - len(entries_to_process)
-                    
-                    if selected_for_edit:
-                        current_dict = publishers[selected_for_edit].get("dictionary", [])
-                        
-                        dup_entries = [e for e in entries_to_process if find_duplicate_entry(current_dict, e["from"]) >= 0]
-                        new_unique_entries = [e for e in entries_to_process if find_duplicate_entry(current_dict, e["from"]) < 0]
-                        
-                        st.markdown(f"**📊 סיכום הוספה להוצאה '{selected_for_edit}':**")
-                        if new_unique_entries:
-                            st.markdown(f"✅ **{len(new_unique_entries)}** ערכים חדשים להוספה")
-                        if dup_entries:
-                            st.markdown(f"⚠️ **{len(dup_entries)}** ערכים כבר קיימים במילון (ידולגו)")
-                            with st.expander("הצג ערכים כפולים"):
-                                for d in dup_entries:
-                                    st.text(f'"{d["from"]}" → "{d["to"]}"')
-                        if invalid_in_table > 0:
-                            st.markdown(f"❌ **{invalid_in_table}** שורות לא תקינות (ידולגו)")
-                        
-                        if new_unique_entries:
-                            if st.button(
-                                f"הוסף {len(new_unique_entries)} ערכים חדשים",
-                                key="add_from_file",
-                                type="primary",
-                                use_container_width=True
-                            ):
-                                current_dict.extend(new_unique_entries)
-                                publishers[selected_for_edit]["dictionary"] = current_dict
-                                save_publishers(publishers)
-                                st.success(f"נוספו {len(new_unique_entries)} ערכים בהצלחה!")
-                                st.rerun()
-                        elif entries_to_process and not new_unique_entries:
-                            st.info("כל הערכים התקינים כבר קיימים במילון")
+                    if not file_entries:
+                        st.error("לא נמצאו שורות בקובץ")
                     else:
-                        st.warning("⚠️ יש לבחור הוצאה קודם, או ליצור הוצאה חדשה ולבחור אותה, כדי להוסיף ערכים למילון")
+                        valid_entries_list = [e for e in file_entries if e["valid"]]
+                        invalid_entries_list = [e for e in file_entries if not e["valid"]]
+                        
+                        if invalid_entries_list:
+                            invalid_lines_str = ", ".join(str(e["line"]) for e in invalid_entries_list)
+                            st.warning(f"⚠️ {len(invalid_entries_list)} שורות לא תקינות (שורות: {invalid_lines_str}). ניתן לערוך ולתקן בטבלה.")
+                        
+                        st.success(f"✅ {len(valid_entries_list)} ערכים תקינים מתוך {len(file_entries)} שורות")
+                        
+                        # טבלת תצוגה מקדימה עם אפשרות עריכה
+                        file_df = pd.DataFrame([
+                            {
+                                "#": e["line"],
+                                "מקור": e["from"],
+                                "יעד": e["to"],
+                            }
+                            for e in file_entries
+                        ])
+                        
+                        edited_file_df = st.data_editor(
+                            file_df,
+                            width="stretch",
+                            height=min(300, 60 + len(file_entries) * 35),
+                            hide_index=True,
+                            column_config={
+                                "#": st.column_config.NumberColumn("#", width="small", disabled=True),
+                                "מקור": st.column_config.TextColumn("מקור", width="medium"),
+                                "יעד": st.column_config.TextColumn("יעד", width="medium"),
+                            },
+                            key="file_preview_editor"
+                        )
+                        
+                        # הורדת קובץ מתוקן
+                        corrected_lines = []
+                        for _, row in edited_file_df.iterrows():
+                            from_val = str(row["מקור"]).strip() if pd.notna(row["מקור"]) else ""
+                            to_val = str(row["יעד"]).strip() if pd.notna(row["יעד"]) else ""
+                            if from_val and to_val:
+                                corrected_lines.append(f'"{from_val}" "{to_val}"')
+                        
+                        if corrected_lines:
+                            corrected_content = "\n".join(corrected_lines)
+                            st.download_button(
+                                "💾 הורד קובץ מתוקן",
+                                data=corrected_content.encode("utf-8"),
+                                file_name=f"corrected_{uploaded_dict.name}",
+                                mime="text/plain",
+                                use_container_width=True
+                            )
+                        
+                        # הוספת ערכים להוצאה
+                        st.markdown("---")
+                        
+                        # חישוב ערכים תקינים מהטבלה הערוכה
+                        entries_to_process = []
+                        for _, row in edited_file_df.iterrows():
+                            from_val = str(row["מקור"]).strip() if pd.notna(row["מקור"]) else ""
+                            to_val = str(row["יעד"]).strip() if pd.notna(row["יעד"]) else ""
+                            if from_val and to_val:
+                                entries_to_process.append({"from": from_val, "to": to_val})
+                        
+                        invalid_in_table = len(edited_file_df) - len(entries_to_process)
+                        
+                        if selected_for_edit:
+                            current_dict = publishers[selected_for_edit].get("dictionary", [])
+                            
+                            dup_entries = [e for e in entries_to_process if find_duplicate_entry(current_dict, e["from"]) >= 0]
+                            new_unique_entries = [e for e in entries_to_process if find_duplicate_entry(current_dict, e["from"]) < 0]
+                            
+                            st.markdown(f"**📊 סיכום הוספה להוצאה '{selected_for_edit}':**")
+                            if new_unique_entries:
+                                st.markdown(f"✅ **{len(new_unique_entries)}** ערכים חדשים להוספה")
+                            if dup_entries:
+                                st.markdown(f"⚠️ **{len(dup_entries)}** ערכים כבר קיימים במילון (ידולגו)")
+                                with st.expander("הצג ערכים כפולים"):
+                                    for d in dup_entries:
+                                        st.text(f'"{d["from"]}" → "{d["to"]}"')
+                            if invalid_in_table > 0:
+                                st.markdown(f"❌ **{invalid_in_table}** שורות לא תקינות (ידולגו)")
+                            
+                            if new_unique_entries:
+                                if st.button(
+                                    f"הוסף {len(new_unique_entries)} ערכים חדשים",
+                                    key="add_from_file",
+                                    type="primary",
+                                    use_container_width=True
+                                ):
+                                    current_dict.extend(new_unique_entries)
+                                    publishers[selected_for_edit]["dictionary"] = current_dict
+                                    save_publishers(publishers)
+                                    st.success(f"נוספו {len(new_unique_entries)} ערכים בהצלחה!")
+                                    st.rerun()
+                            elif entries_to_process and not new_unique_entries:
+                                st.info("כל הערכים התקינים כבר קיימים במילון")
+                        else:
+                            st.warning("⚠️ יש לבחור הוצאה קודם, או ליצור הוצאה חדשה ולבחור אותה, כדי להוסיף ערכים למילון")
 
 
         # ===== חוקי הוצאה - טקסט חופשי לכל הוצאה =====
         st.markdown("---")
-        st.markdown("### 📜 חוקי ההוצאה")
-        if selected_for_edit:
-            st.caption(f"חוקים והנחיות להוצאת הספרים: {selected_for_edit}")
-            rules_text = publishers[selected_for_edit].get("publisher_rules", "")
-            editing_this_publisher = (
-                st.session_state.get("editing_rules_publisher") == selected_for_edit
-            )
-            editor_key = f"publisher_rules_editor_{selected_for_edit}"
-
-            if editing_this_publisher:
-                st.text_area(
-                    "עריכת חוקי ההוצאה",
-                    height="content",
-                    key=editor_key,
-                    help="ניתן להקליד או להדביק כאן טקסט חופשי של כללי ההוצאה",
+        with st.container(border=True, key="panel_publisher_rules"):
+            st.markdown("### 📜 חוקי ההוצאה")
+            if selected_for_edit:
+                st.caption(f"חוקים והנחיות להוצאת הספרים: {selected_for_edit}")
+                rules_text = publishers[selected_for_edit].get("publisher_rules", "")
+                editing_this_publisher = (
+                    st.session_state.get("editing_rules_publisher") == selected_for_edit
                 )
-                save_col, cancel_col = st.columns([1, 1])
-                with save_col:
+                editor_key = f"publisher_rules_editor_{selected_for_edit}"
+
+                if editing_this_publisher:
+                    st.text_area(
+                        "עריכת חוקי ההוצאה",
+                        height="content",
+                        key=editor_key,
+                        help="ניתן להקליד או להדביק כאן טקסט חופשי של כללי ההוצאה",
+                    )
+                    save_col, cancel_col = st.columns([1, 1])
+                    with save_col:
+                        if st.button(
+                            "✅ שמור שינויים",
+                            type="primary",
+                            use_container_width=True,
+                            key="save_publisher_rules",
+                        ):
+                            publishers[selected_for_edit]["publisher_rules"] = (
+                                st.session_state[editor_key]
+                            )
+                            save_publishers(publishers)
+                            st.session_state.editing_rules_publisher = None
+                            st.success("חוקי ההוצאה נשמרו בהצלחה")
+                            st.rerun()
+                    with cancel_col:
+                        if st.button(
+                            "❌ ביטול",
+                            use_container_width=True,
+                            key="cancel_publisher_rules",
+                        ):
+                            st.session_state.editing_rules_publisher = None
+                            st.rerun()
+                else:
+                    st.text_area(
+                        "חוקי ההוצאה (לקריאה בלבד)",
+                        value=rules_text,
+                        height="content",
+                        key="publisher_rules_read_only",
+                        disabled=True,
+                        help="לחץ על עריכה כדי לשנות את חוקי ההוצאה",
+                    )
                     if st.button(
-                        "✅ שמור שינויים",
-                        type="primary",
-                        use_container_width=True,
-                        key="save_publisher_rules",
+                        "✏️ עריכה",
+                        key="edit_publisher_rules",
+                        use_container_width=False,
                     ):
-                        publishers[selected_for_edit]["publisher_rules"] = (
-                            st.session_state[editor_key]
-                        )
-                        save_publishers(publishers)
-                        st.session_state.editing_rules_publisher = None
-                        st.success("חוקי ההוצאה נשמרו בהצלחה")
-                        st.rerun()
-                with cancel_col:
-                    if st.button(
-                        "❌ ביטול",
-                        use_container_width=True,
-                        key="cancel_publisher_rules",
-                    ):
-                        st.session_state.editing_rules_publisher = None
+                        # Always start with the saved version, not a previous draft.
+                        st.session_state[editor_key] = rules_text
+                        st.session_state.editing_rules_publisher = selected_for_edit
                         st.rerun()
             else:
-                st.text_area(
-                    "חוקי ההוצאה (לקריאה בלבד)",
-                    value=rules_text,
-                    height="content",
-                    key="publisher_rules_read_only",
-                    disabled=True,
-                    help="לחץ על עריכה כדי לשנות את חוקי ההוצאה",
-                )
-                if st.button(
-                    "✏️ עריכה",
-                    key="edit_publisher_rules",
-                    use_container_width=False,
-                ):
-                    # Always start with the saved version, not a previous draft.
-                    st.session_state[editor_key] = rules_text
-                    st.session_state.editing_rules_publisher = selected_for_edit
-                    st.rerun()
-        else:
-            st.info("בחר הוצאת ספרים למעלה כדי להציג או לערוך את חוקיה.")
+                st.info("בחר הוצאת ספרים למעלה כדי להציג או לערוך את חוקיה.")
 
 
 if __name__ == "__main__":
