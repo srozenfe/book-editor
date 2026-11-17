@@ -183,6 +183,18 @@ st.markdown("""
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
+
+    /* Publisher rules only: Hebrew typing and right alignment.
+       Keep the Streamlit auto-content height and avoid inner scrollbars. */
+    [class*="st-key-publisher_rules_"] textarea {
+        direction: rtl !important;
+        text-align: right !important;
+        unicode-bidi: plaintext;
+        min-height: 350px;
+        overflow-y: hidden !important;
+        resize: none;
+        line-height: 1.7;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1004,7 +1016,7 @@ def main():
             if editing_this_publisher:
                 st.text_area(
                     "עריכת חוקי ההוצאה",
-                    height=350,
+                    height="content",
                     key=editor_key,
                     help="ניתן להקליד או להדביק כאן טקסט חופשי של כללי ההוצאה",
                 )
@@ -1035,7 +1047,8 @@ def main():
                 st.text_area(
                     "חוקי ההוצאה (לקריאה בלבד)",
                     value=rules_text,
-                    height=350,
+                    height="content",
+                    key="publisher_rules_read_only",
                     disabled=True,
                     help="לחץ על עריכה כדי לשנות את חוקי ההוצאה",
                 )
