@@ -8,6 +8,7 @@ A Streamlit-based tool for automatic word replacement in Word documents (.docx),
 - **Publisher Management** – Create, rename, and delete publishers, each with its own dictionary.
 - **Dictionary Management** – Add rules manually, edit inline via a data table, or bulk-import from a text file.
 - **Deletion History** – Deleted dictionary entries are saved (up to 100) and can be restored.
+- **Publisher Rules** – A large read-only text area at the bottom of Dictionary Management stores free-form editorial instructions separately for each publisher. Click Edit, then Save or Cancel; these notes do not alter automatic word replacement.
 - **Export** – Download the processed Word file and export/import dictionary files.
 
 ## Project Structure
